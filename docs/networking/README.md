@@ -1,55 +1,17 @@
-# Networking e Analisi Protocolli
+# Networking e Sicurezza - Documentazione Completa
 
-Documentazione completa su networking, analisi protocolli, packet capture e reconnaissance. Include analisi pratica di traffico di rete, subnetting e port scanning con tools professionali.
+Documentazione tecnica completa su networking, analisi protocolli, packet capture e attack vectors. Include analisi pratica di traffico di rete, ARP spoofing, MITM attacks e tecniche di reconnaissance con tools professionali.
 
 ## Indice
 
-- [Stack TCP/IP vs Modello OSI](#stack-tcpip-vs-modello-osi)
 - [Packet Analysis](#packet-analysis)
 - [Three-Way Handshake](#three-way-handshake)
 - [Subnetting](#subnetting)
 - [Port Scanning](#port-scanning)
 - [Network Discovery](#network-discovery)
+- [ARP Spoofing & Man-in-the-Middle Attack](#arp-spoofing--man-in-the-middle-attack)
 - [Protocol Vulnerabilities](#protocol-vulnerabilities)
 - [Best Practices](#best-practices)
-
-## Stack TCP/IP vs Modello OSI
-
-### Modello OSI (7 livelli)
-
-Modello teorico di riferimento per comunicazioni di rete:
-
-| Livello | Nome | Funzione | Esempi |
-|---------|------|----------|--------|
-| 7 | **Applicazione** | Interfaccia utente | HTTP, FTP, SSH, DNS |
-| 6 | **Presentazione** | Crittografia, compressione | SSL/TLS, JPEG, MPEG |
-| 5 | **Sessione** | Gestione connessioni | NetBIOS, RPC, SQL |
-| 4 | **Trasporto** | Affidabilità end-to-end | TCP, UDP |
-| 3 | **Rete** | Routing | IP, ICMP, OSPF |
-| 2 | **Data Link** | Frame, correzione errori | Ethernet, WiFi, PPP |
-| 1 | **Fisico** | Segnali elettrici/ottici | Cable, Fiber, Radio |
-
-### Stack TCP/IP (4 livelli)
-
-Implementazione pratica usata in Internet:
-
-| Livello | Nome | Protocolli | Corrispondenza OSI |
-|---------|------|------------|-------------------|
-| 4 | **Applicazione** | HTTP, FTP, SSH, DNS, SMTP | Livelli 5-7 OSI |
-| 3 | **Trasporto** | TCP, UDP | Livello 4 OSI |
-| 2 | **Internet (IP)** | IP, ICMP, ARP | Livello 3 OSI |
-| 1 | **Host/Link** | Ethernet, WiFi | Livelli 1-2 OSI |
-
-### Differenze Chiave TCP vs UDP
-
-| Caratteristica | TCP | UDP |
-|----------------|-----|-----|
-| **Affidabilità** | Garantita | Best effort |
-| **Velocità** | Più lento | Più veloce |
-| **Overhead** | Alto | Basso |
-| **Controllo flusso** | Sì | No |
-| **Rilevazione errori** | Sì | Limitata |
-| **Uso tipico** | Web, Email, File transfer | DNS, Streaming, Gaming |
 
 ## Packet Analysis
 
@@ -493,30 +455,6 @@ Host script results:
 - **ms10-054**: Non vulnerabile
 - **Errori connessione**: SMB hardening efficace
 
-#### Tentativo Vulnerabilità SMBv1
-
-**Abilitazione SMBv1 (test didattico)**:
-```powershell
-# Su Windows target (NON fare in produzione!)
-Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
-```
-
-**Registry modification per testing**:
-```powershell
-# Permettere accesso guest insicuro
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\lanmanserver\parameters" /v AllowInsecureGuestAuth /t REG_DWORD /d 1
-```
-
-**Risultato scan post-modifiche**:
-```
-Host script results:
-|_smb-vuln-ms10-054: false
-|_samba-vuln-cve-2012-1182: NT_STATUS_ACCESS_DENIED
-|_smb-vuln-ms10-061: NT_STATUS_ACCESS_DENIED
-```
-
-**Conclusione**: Anche con SMBv1 abilitato, Windows 11 rimane resistente ai scan di vulnerabilità base.
-
 ## Network Discovery
 
 ### netdiscover - ARP Scanner
@@ -560,6 +498,176 @@ _____________________________________________________________________________
 - Fingerprinting dispositivi di rete
 - Identificazione infrastruttura critica
 - Target selection per penetration testing
+
+## ARP Spoofing & Man-in-the-Middle Attack
+
+### Teoria del Protocollo ARP
+
+#### Cos'è ARP (Address Resolution Protocol)
+- **Funzione**: Mappa indirizzi IP → MAC address nella rete locale (LAN)
+- **Meccanismo**: Quando un host vuole comunicare con un IP, invia broadcast ARP "Chi ha questo IP?"
+- **Risposta**: L'host con quell'IP risponde con il suo MAC address
+- **Cache**: Il MAC viene salvato nella ARP table per uso futuro
+
+#### Vulnerabilità Intrinseche di ARP
+1. **Stateless Protocol**: Nessuna verifica dell'identità
+2. **Broadcast Domain**: Tutti nella LAN ricevono pacchetti ARP
+3. **Cache Poisoning**: Accetta aggiornamenti ARP senza autenticazione
+4. **Trust-based**: Si fida di qualsiasi risposta ARP ricevuta
+
+### ARP Spoofing Implementation
+
+#### Installazione Dipendenze
+```bash
+# Installa Scapy per Python
+pip install scapy --break-system-packages
+
+# Verifica installazione
+python3 -c "import scapy.all as scapy; print('Scapy OK')"
+```
+
+#### Script ARP Spoofer
+
+**📄 Script completo**: [`scripts/networking/mitm_spoofer.py`](../../scripts/networking/mitm_spoofer.py)
+
+**Funzionalità principali**:
+- ARP spoofing bidirezionale (target ↔ gateway)
+- Intercettazione traffico HTTP in tempo reale
+- Estrazione automatica credenziali da form POST
+- IP forwarding e configurazione iptables automatica
+- Cleanup completo all'interruzione
+
+**Uso**:
+```bash
+# Sintassi base
+sudo python3 scripts/networking/mitm_spoofer.py <target_ip> <gateway_ip> [interface]
+
+# Esempio pratico
+sudo python3 scripts/networking/mitm_spoofer.py 192.168.1.100 192.168.1.1 wlan0
+```
+
+### Network Discovery Pre-Attack
+
+#### Scoprire Target e Gateway
+```bash
+# Identifica la tua interfaccia di rete
+ip addr show
+
+# Trova il gateway predefinito  
+ip route show | grep default
+# Output: default via 192.168.1.1 dev wlan0
+
+# Scansiona la rete locale
+netdiscover -r 192.168.1.0/24
+# O alternativamente:
+nmap -sn 192.168.1.0/24
+```
+
+### Esecuzione Attacco MITM
+
+#### Output Attacco Reale
+```
+🎯 Advanced MITM ARP Spoofer v2.0
+=================================
+⚠️  Solo per scopi educativi e test di sicurezza
+
+[+] Risolvendo MAC address per 192.168.x.58...
+[+] MAC di 192.168.x.58 è 08:00:27:2f:36:a6
+[+] Risolvendo MAC address per 192.168.x.141...
+[+] MAC di 192.168.x.141 è 2a:42:c4:38:b7:66
+[+] Abilitando IP forwarding...
+[+] Configurando iptables...
+[+] Avviando cattura pacchetti HTTP...
+
+🎯 Iniziando MITM attack:
+    Target: 192.168.x.58 (08:00:27:2f:36:a6)
+    Gateway: 192.168.x.141 (2a:42:c4:38:b7:66)
+    Interface: wlo1
+
+📡 ARP spoofing attivo (modalità silenziosa)
+🕵️  Monitorando traffico HTTP...
+
+🌐 [14:30:30] HTTP GET Request
+    From: 192.168.x.58 → To: 146.190.62.39
+    URL: http://httpforever.com/
+
+📡 [14:30:30] HTTP Response
+    From: 146.190.62.39 → To: 192.168.x.58
+    Status: 200
+
+🌐 [14:30:31] HTTP POST Request
+    From: 192.168.x.58 → To: 216.58.205.35
+    URL: http://o.pki.goog/wr2
+    POST Data: 0R0P0N0L0J0...
+
+📊 Pacchetti ARP inviati: 150+ | Dati intercettati: 25
+```
+
+### Risultati e Implicazioni
+
+#### Traffico Intercettato con Successo
+- **HTTP GET Requests**: Tutti i siti web visitati
+- **HTTP POST Requests**: Dati di form, login, ricerche
+- **Response Status**: 200 (OK), 304 (Not Modified)
+- **Invisibilità Completa**: Vittima ignara dell'attacco
+
+#### Dati Sensibili Intercettabili
+1. **Credenziali HTTP**: Username/password in chiaro
+2. **Session Cookies**: Per session hijacking
+3. **Dati Personali**: Form submissions, ricerche  
+4. **File Downloads**: Modificabili in tempo reale
+5. **DNS Queries**: Domini visitati
+
+#### Limitazioni dell'Attacco
+- **HTTPS Traffic**: Protetto da crittografia (solo metadata visibili)
+- **HSTS Sites**: HTTP Strict Transport Security impedisce downgrade
+- **Certificate Pinning**: App mobili con pinning resistono a MITM
+
+### Protezioni Anti-ARP Spoofing
+
+#### Configurazioni Difensive
+```bash
+# Static ARP entries (impedisce spoofing del gateway)
+sudo arp -s 192.168.1.1 aa:bb:cc:dd:ee:ff
+
+# Monitoring ARP anomalies
+arp-scan -l | grep "DUP"  # Cerca duplicati sospetti
+
+# ARP table monitoring
+watch -n 5 'arp -a'  # Monitora cambiamenti ARP
+
+# Network monitoring con tcpdump
+sudo tcpdump -i wlan0 arp and ether src aa:bb:cc:dd:ee:ff
+```
+
+#### Network Hardening
+```bash
+# Enable ARP filtering (Linux)
+echo 1 > /proc/sys/net/ipv4/conf/all/arp_filter
+
+# DHCP snooping (managed switches)
+# Port security con MAC address binding
+# VLAN segmentation per isolare traffico critico
+```
+
+### Lezioni di Sicurezza Apprese
+
+#### Riflessione sull'Attacco
+> **"Oggi ho capito davvero cosa significa 'man in the middle'"**
+> 
+> Non è solo teoria - è una cosa che funziona davvero e fa paura quanto sia semplice. Con poche righe di Python sono riuscito a mettermi nel mezzo delle comunicazioni di una macchina senza che se ne accorgesse minimamente.
+> 
+> La vittima navigava tranquilla su httpforever.com mentre io vedevo tutto il suo traffico HTTP passarmi davanti agli occhi. **L'invisibilità dell'attacco è la cosa più spaventosa** - nessun rallentamento, errore o avviso.
+
+#### Vulnerabilità Fondamentale di ARP
+- **Design Flaw**: ARP si basa sulla "fiducia cieca"
+- **Analogia**: Come gridare "sono il postino" e tutti ti danno le lettere senza verifica
+- **Impatto**: Rende insicura ogni rete locale non hardened
+
+#### Importanza di HTTPS
+- **Unica Protezione Reale**: Solo HTTPS protegge i dati in MITM
+- **Educazione**: La maggior parte degli utenti non capisce la differenza HTTP/HTTPS
+- **Responsibility**: Sviluppatori devono forzare HTTPS sempre
 
 ### ARP Spoofing Detection
 
@@ -646,6 +754,8 @@ echo "Sent gratuitous ARP for gateway"
 
 #### Continuous Packet Capture
 
+**📄 Script completo**: [`scripts/networking/network_monitor.sh`](../../scripts/networking/network_monitor.sh)
+
 ```bash
 #!/bin/bash
 # Script monitoring rete continuo
@@ -659,22 +769,13 @@ tcpdump -i $INTERFACE -C $ROTATION_SIZE -W 10 -w $CAPTURE_DIR/capture.pcap
 
 #### Anomaly Detection
 
-```bash
-#!/bin/bash
-# Detection scanning activity
-LOG_FILE="/var/log/scan_detection.log"
+**📄 Script completo**: [`scripts/networking/scan_detection.sh`](../../scripts/networking/scan_detection.sh)
 
-# Monitor SYN packets anomali
-tcpdump -i any 'tcp[tcpflags] & tcp-syn != 0' | while read line; do
-    echo "$(date): $line" >> $LOG_FILE
-    # Alert se troppi SYN da stesso IP
-    source_ip=$(echo $line | awk '{print $3}' | cut -d'.' -f1-4)
-    syn_count=$(grep "$source_ip" $LOG_FILE | wc -l)
-    if [ $syn_count -gt 100 ]; then
-        echo "ALERT: Possible port scan from $source_ip" | mail -s "Security Alert" admin@company.com
-    fi
-done
-```
+**Funzionalità**:
+- Monitoring SYN packets anomali
+- Alert automatici per possibili port scan
+- Logging centralizzato
+- Email notifications
 
 ### Defensive Measures
 
@@ -711,35 +812,25 @@ iptables -A FORWARD -s 192.168.20.0/24 -d 192.168.30.0/24 -p tcp --dport 80,443 
 
 #### Target Enumeration
 
+**📄 Script completo**: [`scripts/networking/reconnaissance.sh`](../../scripts/networking/reconnaissance.sh)
+
+**Funzionalità**:
+- Host discovery automatizzato
+- Port scanning parallelo
+- Service enumeration
+- Vulnerability assessment
+- Report generation
+
+**Uso**:
 ```bash
-#!/bin/bash
-# Reconnaissance script completo
-TARGET_NETWORK="192.168.1.0/24"
+# Reconnaissance completo di una rete
+./scripts/networking/reconnaissance.sh 192.168.1.0/24
 
-echo "=== NETWORK RECONNAISSANCE ==="
-echo "Target: $TARGET_NETWORK"
-
-# 1. Host discovery
-echo "[1] Host Discovery..."
-nmap -sn $TARGET_NETWORK | grep "Nmap scan report" > live_hosts.txt
-
-# 2. Port scanning per ogni host
-echo "[2] Port Scanning..."
-while read line; do
-    IP=$(echo $line | awk '{print $5}')
-    echo "Scanning $IP..."
-    nmap -sS -T4 -p- $IP > scan_$IP.txt
-done < live_hosts.txt
-
-# 3. Service enumeration
-echo "[3] Service Enumeration..."
-nmap -sV -sC -A -iL live_hosts.txt > detailed_scan.txt
-
-# 4. Vulnerability assessment
-echo "[4] Vulnerability Check..."
-nmap --script=vuln -iL live_hosts.txt > vuln_scan.txt
-
-echo "Reconnaissance complete. Check output files."
+# Output generato:
+# - live_hosts.txt
+# - scan_[IP].txt per ogni host
+# - detailed_scan.txt
+# - vuln_scan.txt
 ```
 
 #### Stealth Techniques
@@ -777,12 +868,268 @@ tcpdump -B 4096 -i any -w capture.pcap
 tcpdump -i any -C 100 -W 50 -w rotating_capture.pcap
 ```
 
+### Advanced Monitoring Techniques
+
+#### Real-time Traffic Analysis
+
+**📄 Script completo**: [`scripts/networking/traffic_analyzer.py`](../../scripts/networking/traffic_analyzer.py)
+
+**Funzionalità**:
+- Real-time packet analysis
+- Protocol distribution statistics
+- Anomaly detection algorithms
+- Automated threat identification
+- Dashboard generation
+
+#### Network Baseline Creation
+
+**📄 Script completo**: [`scripts/networking/network_baseline.sh`](../../scripts/networking/network_baseline.sh)
+
+```bash
+# Crea baseline del traffico normale
+./scripts/networking/network_baseline.sh
+
+# Genera:
+# - normal_traffic_patterns.json
+# - baseline_metrics.txt
+# - protocol_distribution.csv
+```
+
+### Incident Response
+
+#### Network Forensics
+
+**📄 Script completo**: [`scripts/networking/network_forensics.sh`](../../scripts/networking/network_forensics.sh)
+
+**Capabilities**:
+- Automatic evidence collection
+- Timeline reconstruction
+- IOC (Indicators of Compromise) extraction
+- Report generation for legal purposes
+
+#### Emergency Response Procedures
+
+```bash
+# Isolamento immediato host compromesso
+iptables -A INPUT -s [COMPROMISED_IP] -j DROP
+iptables -A OUTPUT -d [COMPROMISED_IP] -j DROP
+
+# Cattura traffico per analisi
+tcpdump -i any -w incident_$(date +%Y%m%d_%H%M%S).pcap host [COMPROMISED_IP]
+
+# Backup configurazioni critiche
+cp /etc/iptables/rules.v4 /backup/iptables_backup_$(date +%Y%m%d)
+```
+
+### Commands Reference Quick
+
+```bash
+# Network discovery
+ip route show | grep default
+netdiscover -r 192.168.1.0/24
+nmap -sn 192.168.1.0/24
+
+# ARP table inspection  
+arp -a
+arp -s <ip> <mac>  # Static entry
+watch -n 5 'arp -a'  # Monitoring
+
+# Traffic monitoring
+sudo tcpdump -i wlan0 arp
+sudo tcpdump -i wlan0 'tcp port 80'
+sudo tshark -i interface
+
+# MITM Attack
+sudo python3 scripts/networking/mitm_spoofer.py <target> <gateway>
+
+# Port scanning
+nmap -sS -p- -O -sV target
+nmap --script=vuln target
+nmap -sS -T1 --randomize-hosts target  # Stealth
+
+# Packet analysis
+tshark -r capture.pcap
+tcpdump -r capture.pcap 'filter'
+
+# Network monitoring
+./scripts/networking/network_monitor.sh
+./scripts/networking/scan_detection.sh
+
+# Reconnaissance
+./scripts/networking/reconnaissance.sh 192.168.1.0/24
+
+# Forensics
+./scripts/networking/network_forensics.sh
+```
+
+### Security Assessment Checklist
+
+#### Pre-Assessment Phase
+- [ ] Obtain proper authorization
+- [ ] Define scope and limitations
+- [ ] Prepare isolated test environment
+- [ ] Backup critical configurations
+- [ ] Establish communication protocols
+
+#### Discovery Phase
+- [ ] Network topology mapping
+- [ ] Host enumeration (netdiscover/nmap)
+- [ ] Service identification
+- [ ] OS fingerprinting
+- [ ] Vulnerability assessment
+
+#### Testing Phase
+- [ ] ARP spoofing feasibility
+- [ ] MITM attack simulation
+- [ ] Traffic interception verification
+- [ ] Protocol vulnerability testing
+- [ ] Evasion technique validation
+
+#### Documentation Phase
+- [ ] Detailed methodology documentation
+- [ ] Evidence collection and preservation
+- [ ] Risk assessment and impact analysis
+- [ ] Remediation recommendations
+- [ ] Executive summary preparation
+
+### Remediation Strategies
+
+#### Network Hardening
+
+**Immediate Actions**:
+```bash
+# Disable unused network services
+systemctl disable telnet
+systemctl disable ftp
+systemctl disable rsh
+
+# Enable secure protocols only
+systemctl enable ssh
+systemctl enable https
+
+# Configure firewall rules
+ufw enable
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow ssh
+ufw limit ssh
+```
+
+**Long-term Solutions**:
+- Network segmentation with VLANs
+- Implement network access control (NAC)
+- Deploy intrusion detection systems (IDS)
+- Regular security assessments
+- Staff security awareness training
+
+#### Monitoring Implementation
+
+**📄 Configuration files**: [`configs/networking/`](../../configs/networking/)
+
+**Includes**:
+- `iptables_secure.rules` - Hardened firewall configuration
+- `snort.conf` - IDS configuration
+- `rsyslog_network.conf` - Centralized logging
+- `nagios_network.cfg` - Network monitoring
+
+### Legal and Ethical Considerations
+
+#### Important Disclaimers
+
+**⚠️ LEGAL WARNING**: 
+- Use these techniques ONLY on networks you own or have explicit written permission to test
+- Unauthorized network attacks are illegal in most jurisdictions
+- Always follow responsible disclosure practices
+- Document all testing activities for legal protection
+
+#### Ethical Guidelines
+
+**Best Practices**:
+- Obtain proper authorization before testing
+- Minimize impact on production systems
+- Protect confidentiality of discovered information
+- Provide constructive remediation guidance
+- Follow industry ethical standards (EC-Council, SANS, etc.)
+
+#### Compliance Considerations
+
+**Regulatory Frameworks**:
+- GDPR: Data protection during network testing
+- HIPAA: Healthcare network security requirements
+- PCI DSS: Payment card industry standards
+- SOX: Financial data protection requirements
+
 ---
 
-**Conclusioni Networking**:
-- L'analisi del traffico rivela molto sull'infrastruttura di rete
-- Windows 11 ha significativi miglioramenti di sicurezza rispetto alle versioni precedenti
-- Il port scanning rimane una tecnica fondamentale di reconnaissance
-- La comprensione dei protocolli è essenziale per identificare vulnerabilità
+**Conclusioni Networking e Sicurezza**:
 
-[← Linux Security](../linux-security/README.md) | [Defensive Security →](../defensive-security/README.md)
+### Key Takeaways
+
+1. **ARP Vulnerability is Fundamental**: Il protocollo ARP rimane intrinsecamente insicuro per design, rendendo ogni rete locale potenzialmente vulnerabile a MITM attacks.
+
+2. **HTTPS è l'Unica Protezione Reale**: Contro attacchi MITM, solo HTTPS fornisce protezione effettiva dei dati in transito.
+
+3. **Invisibilità degli Attacchi**: Gli attacchi ARP spoofing sono completamente invisibili alle vittime, rendendo la detection proattiva essenziale.
+
+4. **Windows 11 Security Improvements**: Le versioni moderne di Windows mostrano significativi miglioramenti nella security posture rispetto alle versioni precedenti.
+
+5. **Network Monitoring è Critico**: Il monitoraggio continuo del traffico di rete è essenziale per early warning e incident response.
+
+6. **Defense in Depth**: Nessuna singola tecnologia di sicurezza è sufficiente; serve un approccio stratificato.
+
+### Lessons Learned
+
+**Technical Insights**:
+- Port scanning rimane una tecnica fondamentale di reconnaissance
+- La comprensione dei protocolli è essenziale per identificare vulnerabilità
+- Network segmentation e monitoring continuo sono pilastri della difesa
+- L'automazione degli assessment accelera significativamente il processo
+
+**Security Implications**:
+- Le reti locali non sono intrinsecamente sicure
+- L'educazione degli utenti su HTTPS è cruciale
+- La visibility del traffico di rete è fondamentale per la sicurezza
+- Gli attacchi moderni richiedono tecniche di detection sofisticate
+
+**Operational Impact**:
+- Gli strumenti open source sono potenti quanto le soluzioni commerciali
+- La documentazione dettagliata è essenziale per incident response
+- L'approccio systematico supera sempre gli attacchi "spray and pray"
+- La collaboration tra team offensivi e difensivi migliora la security posture complessiva
+
+### Future Research Directions
+
+**Areas of Interest**:
+- IoT device security in modern networks
+- AI/ML-based network anomaly detection
+- Zero-trust network architecture implementation
+- Advanced persistent threat (APT) detection techniques
+- Container and cloud network security
+
+**Tool Development**:
+- Enhanced MITM detection algorithms
+- Automated vulnerability assessment frameworks
+- Real-time network visualization tools
+- Integrated threat intelligence platforms
+
+---
+
+**Repository Structure for Scripts**:
+```
+scripts/networking/
+├── mitm_spoofer.py           # Advanced MITM ARP Spoofer
+├── network_monitor.sh        # Continuous packet capture
+├── scan_detection.sh         # Anomaly detection
+├── reconnaissance.sh         # Automated target enumeration
+├── traffic_analyzer.py       # Real-time traffic analysis
+├── network_baseline.sh       # Baseline creation
+└── network_forensics.sh      # Incident response forensics
+
+configs/networking/
+├── iptables_secure.rules     # Hardened firewall configuration
+├── snort.conf               # IDS configuration
+├── rsyslog_network.conf     # Centralized logging
+└── nagios_network.cfg       # Network monitoring
+```
+
+Questa documentazione rappresenta un percorso completo attraverso le tecniche moderne di network security assessment, bilanciando aspetti offensivi e difensivi con un forte focus sull'etica e sulla legalità.
