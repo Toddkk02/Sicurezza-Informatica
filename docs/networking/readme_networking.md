@@ -3403,4 +3403,6 @@ configs/networking/
 ```
 
 Questa documentazione rappresenta un percorso completo attraverso le tecniche moderne di network security assessment, bilanciando aspetti offensivi e difensivi con un forte focus sull'etica e sulla legalità.
+
+
 [← Linux Security](../linux-security/README.md) | [Defensive Security →](../defensive-security/README.md)
