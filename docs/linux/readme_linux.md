@@ -759,5 +759,187 @@ find /usr/bin /usr/sbin -type f -newer /var/log/lastaudit -exec getcap {} \;
 - ACL migliori di chattr per la maggior parte dei casi d'uso
 - Defense in depth efficace contro exploit classici
 - Monitoring proattivo essenziale per individuare abusi
+## 🔐 SUID/SGID Deep Dive & Exploitation
 
+### Ricognizione Sistema SUID/SGID
+```bash
+# Trova tutti i binari SUID/SGID nel sistema
+find / -type f \( -perm -4000 -o -perm -2000 \) -exec ls -la {} \; 2>/dev/null > /tmp/suid_sgid_full.txt
+
+# Spiegazione comando:
+# / = cerca dalla root
+# -type f = solo file normali
+# -perm -4000 = file SUID (Set User ID)
+# -perm -2000 = file SGID (Set Group ID)
+# \( \) = raggruppamento con escape
+# -o = OR logico
+# 2>/dev/null = nasconde errori di permesso
+```
+
+### Analisi Output SUID/SGID
+```bash
+# Esempio output tipico:
+-rwsr-xr-x 1 root root 47512  8 apr  2024 /usr/bin/crontab
+-rwsr-xr-x 1 root root 34944 12 lug  2024 /usr/bin/fusermount
+-rwsr-sr-x 1 root root 22560  7 set  2024 /usr/bin/mount.ecryptfs_private
+-rwsr-xr-x 1 root root 64272 27 giu 09.35 /usr/bin/chage
+-rwsr-xr-x 1 root root 80856 27 giu 09.35 /usr/bin/passwd
+-rwsr-xr-x 1 root root 55384 24 giu 12.45 /usr/bin/su
+-rwsr-xr-x 1 root root 257136 30 giu 18.25 /usr/bin/sudo
+
+# Breakdown di una riga:
+# -rwsr-xr-x = permessi (s = SUID attivo)
+# 1 = numero hard link
+# root root = owner e group
+# 47512 = dimensione in byte
+# data = ultima modifica
+# path = percorso assoluto
+```
+
+### File SUID Legittimi vs Sospetti
+
+**✅ File SUID Legittimi (standard sistema):**
+- `/usr/bin/passwd` - Cambio password utenti
+- `/usr/bin/sudo` - Escalation privilegi controllata  
+- `/usr/bin/su` - Switch user
+- `/usr/bin/mount/umount` - Montaggio filesystem
+- `/usr/bin/chage` - Gestione scadenza password
+
+**⚠️ File SUID Potenzialmente Pericolosi:**
+- `/usr/lib/chromium/chrome-sandbox` - Vulnerabile in versioni pre-2016
+- `/usr/lib/dbus-daemon-launch-helper` - Problemi in vecchie versioni
+- `/usr/bin/fusermount/fusermount3` - FUSE filesystem mounting
+- `/usr/lib/virtualbox/VBox*` - VirtualBox (potenziali vulnerabilità)
+
+**🚨 Path ALTAMENTE Sospetti:**
+- `/tmp/*` con SUID = 🚩 PROBABILE MALWARE
+- `/var/tmp/*` con SUID = 🚩 BACKDOOR POSSIBILE
+- File SUID in directory scrivibili da tutti = PERICOLO
+
+### Exploit SUID Simulation (SOLO LABORATORIO)
+
+#### Creazione Shell SUID Root
+```bash
+# ⚠️ ATTENZIONE: Solo per scopi didattici in ambiente isolato
+
+# 1. Copia bash in /tmp
+cp /bin/bash /tmp/rootshell
+
+# 2. Cambia ownership a root (richiede sudo)
+sudo chown root:root /tmp/rootshell
+
+# 3. Imposta SUID bit
+sudo chmod +s /tmp/rootshell
+
+# 4. Verifica permessi
+ls -la /tmp/rootshell
+# Output: -rwsr-sr-x 1 root root 1100536 19 lug 11.59 /tmp/rootshell
+```
+
+#### Esecuzione Privilege Escalation
+```bash
+# Esegui shell con privilegi
+/tmp/rootshell -p
+
+# Verifica escalation
+id
+# Output: uid=1000(user) gid=1000(user) euid=0(root)
+
+# Test accesso root
+cd /root  # Accesso directory root
+whoami    # Dovrebbe mostrare root capabilities
+cat /etc/shadow  # Lettura file riservati
+```
+
+#### Cleanup Obbligatorio
+```bash
+# ✅ RIMUOVI SEMPRE dopo il test
+sudo rm -f /tmp/rootshell
+
+# Verifica rimozione
+ls -la /tmp/rootshell
+# Dovrebbe dare: No such file or directory
+```
+
+### Difesa contro SUID Abuse
+
+#### Monitor Automatico SUID Sospetti
+```bash
+#!/bin/bash
+# Script: suid_monitor.sh
+
+echo "🔍 Scanning for suspicious SUID files..."
+
+# Check temporanee directories
+find /tmp /var/tmp -type f -perm -4000 2>/dev/null | while read file; do
+    echo "🚨 SUID SOSPETTO IN TEMP: $file"
+    ls -la "$file"
+    echo "  Owner: $(stat -c '%U:%G' "$file")"
+    echo "  Created: $(stat -c '%y' "$file")"
+    echo "---"
+done
+
+# Check for unusual SUID locations
+find /home -type f -perm -4000 2>/dev/null | while read file; do
+    echo "⚠️ SUID IN HOME DIRECTORY: $file"
+    ls -la "$file"
+done
+
+echo "✅ Scan completato"
+```
+
+#### Baseline SUID Monitoring
+```bash
+# Crea baseline dei file SUID legittimi
+find / -type f -perm -4000 2>/dev/null | sort > /etc/suid_baseline.txt
+
+# Script di controllo periodico
+#!/bin/bash
+find / -type f -perm -4000 2>/dev/null | sort > /tmp/suid_current.txt
+diff /etc/suid_baseline.txt /tmp/suid_current.txt
+
+if [ $? -ne 0 ]; then
+    echo "🚨 NUOVI FILE SUID RILEVATI!"
+    echo "Differenze:"
+    diff /etc/suid_baseline.txt /tmp/suid_current.txt
+else
+    echo "✅ Nessun nuovo file SUID"
+fi
+```
+
+#### Hardening SUID
+```bash
+# Rimuovi SUID bit non necessari
+sudo chmod -s /usr/bin/binary_non_necessario
+
+# Audit permessi speciali
+find / -type f \( -perm -4000 -o -perm -2000 \) -exec ls -la {} \; 2>/dev/null | 
+grep -v -E "(passwd|sudo|su|mount|umount|ping)" | 
+tee /tmp/unusual_suid.txt
+
+echo "File SUID/SGID inusuali salvati in /tmp/unusual_suid.txt"
+```
+
+### Implicazioni di Sicurezza Reali
+
+#### Perché SUID è Pericoloso
+1. **Escalation Immediata**: Da user normale a root in un comando
+2. **Persistenza**: File rimane finché non rimosso manualmente  
+3. **Invisibilità**: Non appare nei processi normali
+4. **Bypass Controls**: Evita molti sistemi di monitoring
+
+#### Scenari di Attacco Reali
+- **Malware Drop**: Dropper crea shell SUID in /tmp
+- **Privilege Escalation**: Exploit vulnerability → drop SUID shell
+- **Persistence Mechanism**: Shell SUID come backdoor permanente
+- **Container Escape**: SUID per uscire da container compromesso
+
+#### Lezione Importante
+> La scoperta cruciale è che i sistemi Linux moderni hanno **multiple linee di difesa**:
+> 1. File system permissions (/etc/passwd, /etc/shadow)
+> 2. PAM (Pluggable Authentication Modules)  
+> 3. NSS (Name Service Switch)
+> 4. Systemd user management
+> 
+> Un exploit "vecchia scuola" spesso non basta più, ma **SUID rimane un vettore di attacco potente** se sfruttato correttamente.
 [← Torna al Main](../../README.md) | [Networking →](../networking/README.md)
