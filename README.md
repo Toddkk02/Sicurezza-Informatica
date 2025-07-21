@@ -2,36 +2,17 @@
 
 Documentazione tecnica di un percorso di apprendimento intensivo su sicurezza informatica, networking e amministrazione sistemi Linux/Windows. Questo repository contiene analisi pratiche, exploit sviluppati e tecniche di hardening testate in ambiente laboratorio.
 
-## Struttura del Repository
-
-```
-Sicurezza-Informatica/
-├── README.md                    # Questo file - panoramica generale
-├── docs/
-│   ├── linux-security/
-│   │   └── README.md           # Linux Security completo
-│   ├── networking/
-│   │   └── README.md           # Networking e protocolli
-│   ├── defensive-security/
-│   │   └── README.md           # Tecniche difensive
-│   ├── windows-security/
-│   │   └── README.md           # Windows Security
-│   └── exploits/
-│       └── README.md           # Exploit sviluppati
-├── scripts/                     # Script e tools custom
-├── logs/                       # Log di esempio e analisi
-└── lab-setup/                  # Configurazioni laboratorio
-```
 
 ## Quick Overview
-
-### 📊 Statistiche del Progetto
-- **Durata**: 3+ giorni intensivi
-- **Sistemi testati**: Linux (Manjaro, Kali), Windows 11
-- **Tools utilizzati**: 20+ strumenti di security
-- **Script sviluppati**: 5+ custom tools
-- **Vulnerabilità identificate**: Multiple configuration issues
-- **Log analizzati**: 1000+ entries
+# 📊 Statistiche del Progetto
+- **🕐 Durata**: 5+ giorni intensivi
+- **🖥️ Sistemi testati**: Linux (Manjaro, Kali), Windows 11
+- **⚡ Tools utilizzati**: 25+ strumenti di security
+- **📝 Script sviluppati**: 8+ custom tools
+- **🔍 Vulnerabilità identificate**: Multiple configuration issues
+- **📋 Log analizzati**: 1000+ entries
+- **🎯 Exploit sviluppati**: CAP_SYS_ADMIN privilege escalation, ARP spoofing MITM
+- **🛡️ Tecniche difensive**: ACL hardening, iptables logging, process monitoring
 
 ### 🎯 Competenze Sviluppate
 - **Linux Security**: Permessi avanzati, capabilities, ACL
@@ -79,7 +60,7 @@ Sicurezza-Informatica/
 - **VM 2**: Windows 11 (target testing)
 - **VM 3**: Ubuntu Server (defensive testing)
 
-### Tools Principali
+## 🛠️ Tools Principali
 | Categoria | Strumenti |
 |-----------|-----------|
 | **Reconnaissance** | nmap, netdiscover, ping |
@@ -87,15 +68,19 @@ Sicurezza-Informatica/
 | **Linux Security** | chattr, setfacl, getcap, setcap |
 | **Windows Analysis** | PowerShell, reg, bcdedit, netstat |
 | **Monitoring** | journalctl, iptables, grep |
+| **Exploitation** | Python (scapy), C exploits, Bash scripts |
+| **Forensics** | lsof, ps, pgrep, Process analysis |
 
 ## Key Findings Highlights
 
-### 🔍 Scoperte Principali
-- **Linux**: Defense in depth efficace contro exploit classici
-- **Windows**: Registry persistence ancora molto efficace
-- **Network**: iptables logging ottimo per detection
-- **ACL**: Migliore di chattr +i per protezione log
-- **Capabilities**: CAP_SYS_ADMIN quasi equivale a root
+## 🔍 Scoperte Principali
+- **🐧 Linux**: Defense in depth efficace contro exploit classici
+- **🖥️ Windows**: Registry persistence ancora molto efficace
+- **🌐 Network**: iptables logging ottimo per detection, ARP spoofing funziona ancora
+- **🔒 ACL**: Migliore di chattr +i per protezione log
+- **⚡ Capabilities**: CAP_SYS_ADMIN quasi equivale a root
+- **🕵️ MITM**: ARP spoofing invisibile alle vittime, intercettazione HTTP riuscita
+- **📊 Process Analysis**: lsof e /proc filesystem potenti per forensics
 
 ### 📈 Skills Progression
 ```
@@ -107,23 +92,25 @@ Focus:           Hands-on practical testing
 
 ## Best Practices Identificate
 
-### Blue Team
+## 🔵 Blue Team Best Practices
 - Implementare iptables logging per network monitoring
 - Monitorare registry Windows con script automatici
 - Utilizzare ACL invece di chattr +i per protezione log
 - Analizzare CommandLine processi per malware detection
 
-### Red Team
+## 🔴 Red Team Insights
 - Capabilities exploitation richiede deep system knowledge
 - Registry persistence ancora efficace su Windows
 - Modern defenses richiedono multiple attack vectors
 - Build-based OS detection più accurato
+- ARP spoofing + MITM ancora devastante su reti locali
 
-### System Administrators
+## 👨‍💻 System Administrator Tips
 - journalctl + grep = threat hunting efficace
 - Controllare capabilities pericolose sui binari
 - Monitorare modifiche registry per early warning
 - Rate limiting SSH per prevenire brute force
+- Implementare monitoring proattivo dei processi sospetti
 
 ## Come Navigare
 
