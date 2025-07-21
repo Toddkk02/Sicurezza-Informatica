@@ -640,7 +640,7 @@ session    required   pam_unix.so
 
 ## Process Analysis e Forensics
 
-🔗 **[Vai alla sezione Process Analysis e Linux Forensics](../forensics/README.md)**
+🔗 **[Vai alla sezione Process Analysis e Linux Forensics](../forensic/README.md)**
 
 *Analisi completa di processi, memory mapping, command line forensics, e tecniche di detection per malware e processi sospetti.*
 
