@@ -8,6 +8,7 @@ Documentazione completa su permessi avanzati Linux, capabilities, ACL e tecniche
 - [Linux Capabilities](#linux-capabilities)
 - [Access Control Lists](#access-control-lists)
 - [Exploit CAP_SYS_ADMIN](#exploit-cap_sys_admin)
+- [Process Analysis e Forensics](#process-analysis-e-forensics) 📊
 - [Best Practices](#best-practices)
 
 ## Permessi Speciali
@@ -254,7 +255,7 @@ getcap /tmp/test_sys_admin
 
 **⚠️ Problema**: Le shell non preservano capabilities quando lanciate.
 
-**Soluzione**: Binario compilato che mantiene capabilities.
+**Soluzione**: Binario compilato dedicato.
 
 ### Lista Capabilities Critiche
 
@@ -637,6 +638,12 @@ session    required   pam_unix.so
 3. **CAP_SYS_ADMIN** rimane pericolosa ma serve conoscenza profonda
 4. **Defense in depth** funziona efficacemente
 
+## Process Analysis e Forensics
+
+🔗 **[Vai alla sezione Process Analysis e Linux Forensics](../forensics/README.md)**
+
+*Analisi completa di processi, memory mapping, command line forensics, e tecniche di detection per malware e processi sospetti.*
+
 ## Best Practices
 
 ### Per Blue Team
@@ -760,4 +767,4 @@ find /usr/bin /usr/sbin -type f -newer /var/log/lastaudit -exec getcap {} \;
 - Defense in depth efficace contro exploit classici
 - Monitoring proattivo essenziale per individuare abusi
 
-[← Torna al Main](../../README.md) | [Networking →](../networking/README.md)
+[← Torna al Main](../../README.md) | [Process Forensics →](../forensics/README.md) | [Networking →](../networking/README.md)
