@@ -1,0 +1,7 @@
+#!/bin/bash
+while true; do
+  cat /etc/passwd > /dev/null 2>&1
+  cat /etc/shadow > /dev/null 2>&1
+  ping -c 1 8.8.8.8 > /dev/null 2>&1
+  sleep 5
+done
