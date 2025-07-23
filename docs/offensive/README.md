@@ -878,3 +878,5 @@ if [ -z "$TARGET" ]; then
 ### Note di Sicurezza
 ```
 > ⚠️ **IMPORTANTE**: Tutti i test sono stati condotti in ambiente isolato su sistemi di proprietà personale. L'utilizzo di queste tecniche su sistemi non autorizzati costituisce reato penale.
+
+[Continua Con SUID GUID](suid_sgit_exploitation)
