@@ -179,7 +179,7 @@ Focus:           Hands-on practical testing + exploit development
 
 **Autore**: Alessandro  
 **Periodo**: Luglio 2025  
-**Ultima Revisione**: $(date '+%Y-%m-%d')  
+**Ultima Revisione**: 22 luglio 2025  
 **Licenza**: Documentazione per uso educativo  
 
 Per dettagli specifici, naviga nelle sezioni dedicate linkate sopra.
