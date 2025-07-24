@@ -467,9 +467,3 @@ sudo ip netns exec ns1 iptables -A OUTPUT -d 10.0.0.2 -j DROP
 - **Linux Namespaces**: Microsegmentazione containerizzata
 
 ---
-
-## Posizionamento nel Repository
-
-**Cartella suggerita**: `/networking/`
-
-**Motivazione**: Questo documento copre aspetti fondamentali di networking e sicurezza di rete, dalla configurazione VLAN alla microsegmentazione avanzata. Il contenuto è specificamente orientato alle tecnologie di rete e alla loro sicurezza, rendendo la cartella `networking` la più appropriata per ospitare questa guida completa.
