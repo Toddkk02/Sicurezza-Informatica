@@ -11,6 +11,7 @@ Documentazione tecnica completa su networking, analisi protocolli, packet captur
 - [Network Discovery](#network-discovery)
 - [ARP Spoofing & Man-in-the-Middle Attack](#arp-spoofing--man-in-the-middle-attack)
 - [Protocol Vulnerabilities](#protocol-vulnerabilities)
+- [Sicurezza di Rete - VLAN, VPN, Firewall, IDS/IPS e Microsegmentazione](network_security_guide.md)
 - [Best Practices](#best-practices)
 
 ## Packet Analysis
