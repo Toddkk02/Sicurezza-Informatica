@@ -12,6 +12,8 @@ Documentazione completa su analisi dei processi, memory forensics, log analysis 
 - [Incident Response](#incident-response)
 - [Threat Hunting Techniques](#threat-hunting-techniques)
 - [Best Practices](#best-practices)
+
+- 
   [Malware Analysis](malware_analysis_guide.md)
 ## Process Analysis
 
