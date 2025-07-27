@@ -13,7 +13,7 @@ Il laboratorio è progettato per fornire una comprensione teorica e pratica di c
 ### 🎯 [Cross-Site Scripting (XSS)](xss.md)
 Analisi completa delle vulnerabilità XSS, dalle basi teoriche alle tecniche di exploitation avanzate.
 
-### 📁 [File Upload Vulnerabilities](file-upload-documentation.md)
+### 📁 [File Upload Vulnerabilities](file_upload_documentation.md)
 Studio approfondito delle vulnerabilità di caricamento file, con focus su bypass delle protezioni e Remote Code Execution.
 
 ---
