@@ -10,7 +10,7 @@ Il laboratorio è progettato per fornire una comprensione teorica e pratica di c
 
 ## 📚 Indice delle Vulnerabilità
 
-### 🎯 [Cross-Site Scripting (XSS)](xss.md)
+### 🎯 [Cross-Site Scripting (XSS)](xss-and-session-hijacking.md)
 Analisi completa delle vulnerabilità XSS, dalle basi teoriche alle tecniche di exploitation avanzate.
 
 ### 📁 [File Upload Vulnerabilities](file_upload_documentation.md)
